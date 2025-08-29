@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart IoT Distribution Board Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- jsPDF CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+
+<body class="bg-gradient-to-br from-gray-100 via-white to-gray-100 text-gray-800 font-sans">
+    <div class="container mx-auto p-8">
+        <header class="mb-10 text-center">
+            <h1 class="text-5xl font-extrabold text-gray-900">Smart IoT Distribution Board</h1>
+            <p class="text-gray-600 mt-3">Real-time Monitoring, Solar Analysis, Predictions & Billing</p>
+        </header>
+
+        <!-- Parameters & Inputs -->
+        <section class="bg-white p-8 rounded-3xl shadow-2xl mb-10">
+            <h2 class="text-3xl font-semibold mb-6">Circuit & Solar Parameters</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <!-- Main Circuit -->
+                <div class="p-6 bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-2xl shadow-lg">
+                    <h3 class="text-2xl font-bold mb-3">Main Circuit</h3>
+                    <p>Max Power: <span id="main-max"></span> kW</p>
+                    <p>kWh: <span id="main-kwh"></span></p>
+                    <p>Power Factor: <span id="main-pf"></span></p>
+                </div>
+                <!-- Master Circuit -->
+                <div class="p-6 bg-gradient-to-br from-green-500 to-teal-500 text-white rounded-2xl shadow-lg">
+                    <h3 class="text-2xl font-bold mb-3">Master Circuit</h3>
+                    <p>Max Power: <span id="master-max"></span> kW</p>
+                    <p>kWh: <span id="master-kwh"></span></p>
+                    <p>Power Factor: <span id="master-pf"></span></p>
+                </div>
+                <!-- Sub Circuit -->
+                <div class="p-6 bg-gradient-to-br from-red-500 to-yellow-500 text-white rounded-2xl shadow-lg">
+                    <h3 class="text-2xl font-bold mb-3">Sub Circuit</h3>
+                    <p>Max Power: <span id="sub-max"></span> kW</p>
+                    <p>kWh: <span id="sub-kwh"></span></p>
+                    <p>Power Factor: <span id="sub-pf"></span></p>
+                </div>
+                <!-- Solar Input -->
+                <div class="p-6 bg-gradient-to-br from-yellow-400 to-orange-500 text-white rounded-2xl shadow-lg">
+                    <h3 class="text-2xl font-bold mb-3">Solar Generation</h3>
+                    <p>kWh Generated: <span id="solar-kwh"></span></p>
+                    
+                </div>
+            </div>
+
+            <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <label class="block font-medium mb-1">Max Power Threshold (kW)</label>
+                    <input type="number" id="threshold-power"
+                        class="mt-1 p-3 w-full border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400"
+                        value="10" />
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Min Power Factor Threshold</label>
+                    <input type="number" step="0.01" id="threshold-pf"
+                        class="mt-1 p-3 w-full border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-400"
+                        value="0.9" />
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Energy Cost per Unit (₹/kWh)</label>
+                    <input type="number" step="0.01" id="cost-per-unit"
+                        class="mt-1 p-3 w-full border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-400"
+                        value="12" />
+                </div>
+            </div>
+
+            <div class="mt-6 text-right">
+                <button onclick="applySolar()"
+                    class="mr-4 px-6 py-2 bg-yellow-500 text-white rounded-2xl shadow hover:bg-yellow-600 transition">Update
+                    Solar</button>
+                <button onclick="calculateBilling()"
+                    class="px-8 py-3 bg-indigo-600 text-white rounded-2xl shadow hover:bg-indigo-700 transform hover:-translate-y-1 transition">Calculate
+                    Billing</button>
+            </div>
+            <p class="mt-4 text-2xl font-semibold">Total Billing: <span id="billing-amount">₹0.00</span></p>
+        </section>
+
+        <!-- Charts Section -->
+        <section class="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-10">
+            <div class="bg-white p-6 rounded-2xl shadow-2xl">
+                <h2 class="text-xl font-semibold mb-4">Power Trend (kW)</h2>
+                <canvas id="powerChart"></canvas>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-2xl">
+                <h2 class="text-xl font-semibold mb-4">Energy Consumption (kWh)</h2>
+                <canvas id="energyChart"></canvas>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-2xl">
+                <h2 class="text-xl font-semibold mb-4">Solar vs Grid (kWh)</h2>
+                <canvas id="solarChart"></canvas>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-2xl">
+                <h2 class="text-xl font-semibold mb-4">Next Month Prediction</h2>
+                <canvas id="predictionChart"></canvas>
+            </div>
+        </section>
+
+        <!-- Download Report -->
+        <div class="text-center mb-10">
+            <button onclick="downloadReport()"
+                class="px-10 py-4 bg-green-600 text-white rounded-2xl shadow hover:bg-green-700 transform hover:-translate-y-1 transition">
+                Download Monthly Report
+            </button>
+        </div>
+    </div>
+
+    <script>
+
+
+        var data = {
+            main: { max: 12, kwh: 350, pf: 0.95 },
+            master: { max: 8, kwh: 200, pf: 0.92 },
+            sub: { max: 5, kwh: 120, pf: 0.88 },
+            solar: { kwh: 100 }
+        };
+        const myHeaders = new Headers();
+        myHeaders.append("Content-Type", "application/json");
+        
+        const requestOptions = {
+  method: "GET",
+  headers: myHeaders,
+  redirect: "follow"
+};
+        
+
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+        var powerData = [10, 11, 12, data.main.max, 13, 14];
+        var energyData = [300, 320, 340, data.main.kwh, 360, 380];
+        var solarData = [50, 60, 80, data.solar.kwh, 90, 100];
+
+        function updateDisplay() {
+            document.getElementById('main-max').innerText = data.main.max;
+            document.getElementById('main-kwh').innerText = data.main.kwh;
+            document.getElementById('main-pf').innerText = data.main.pf;
+            document.getElementById('master-max').innerText = data.master.max;
+            document.getElementById('master-kwh').innerText = data.master.kwh;
+            document.getElementById('master-pf').innerText = data.master.pf;
+            document.getElementById('sub-max').innerText = data.sub.max;
+            document.getElementById('sub-kwh').innerText = data.sub.kwh;
+            document.getElementById('sub-pf').innerText = data.sub.pf;
+            document.getElementById('solar-kwh').innerText = data.solar.kwh;
+        }
+
+        function applySolar() {
+            //data.solar.kwh = parseFloat(document.getElementById('input-solar').value);
+            document.getElementById('solar-kwh').innerText = data.solar.kwh;
+            solarData[3] = data.solar.kwh;
+            solarChart.data.datasets[0].data = solarData;
+            solarChart.update();
+            predictionChart.data.datasets[0].data[2] = predictNext(solarData);
+            predictionChart.update();
+        }
+
+        document.querySelector("#threshold-power").addEventListener("change", () => {
+  let data = document.querySelector("#threshold-power").value;
+
+  const myHeaders = new Headers();
+  myHeaders.append("Content-Type", "application/json");
+
+  const requestOptions_switch = {
+    method: "POST",
+    headers: myHeaders,
+    body: JSON.stringify({ max_power: data }),
+    redirect: "follow"
+  };
+
+  console.log("max-power", data);
+
+  fetch("http://192.168.140.6:3000/update_max_value", requestOptions_switch)
+    .then((response) => response.text())
+    .then((result) => console.log("Server response:", result))
+    .catch((error) => console.error("Fetch error:", error));
+});
+
+
+        function calculateBilling() {
+            const cost = parseFloat(document.getElementById('cost-per-unit').value);
+            let bill = data.main.kwh * cost
+            console.log("BILL",bill);
+            
+            document.getElementById('billing-amount').innerText = '₹' + bill.toFixed(2);
+        }
+
+        function predictNext(arr) {
+            const n = arr.length;
+            return Math.round(arr[n - 1] + (arr[n - 1] - arr[n - 2]));
+        }
+
+        const ctxP = document.getElementById('powerChart').getContext('2d');
+        const ctxE = document.getElementById('energyChart').getContext('2d');
+        const ctxS = document.getElementById('solarChart').getContext('2d');
+        const ctxPred = document.getElementById('predictionChart').getContext('2d');
+
+        let powerChart = new Chart(ctxP, {
+            type: 'line',
+            data: { labels: months, datasets: [{ label: 'Main Power (kW)', data: powerData, tension: 0.4 }] },
+            options: { plugins: { legend: { display: false } } }
+        });
+
+        let energyChart = new Chart(ctxE, {
+            type: 'line',
+            data: { labels: months, datasets: [{ label: 'Grid Energy', data: energyData, tension: 0.4 }] },
+            options: { plugins: { legend: { display: false } } }
+        });
+
+        let solarChart = new Chart(ctxS, {
+            type: 'line',
+            data: { labels: months, datasets: [{ label: 'Solar Energy', data: solarData, tension: 0.4 }] },
+            options: { plugins: { legend: { display: false } } }
+        });
+
+        let predictionChart = new Chart(ctxPred, {
+            type: 'bar',
+            data: {
+                labels: ['Next Month Power', 'Next Month Grid', 'Next Month Solar'],
+                datasets: [{
+                    data: [predictNext(powerData), predictNext(energyData), predictNext(solarData)],
+                    backgroundColor: ['rgba(99,102,241,0.7)', 'rgba(239,68,68,0.7)', 'rgba(16,185,129,0.7)']
+                }]
+            },
+            options: { plugins: { legend: { display: false } } }
+        });
+
+        async function downloadReport() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.setFontSize(18);
+            doc.text("Smart IoT Distribution Report", 20, 20);
+
+            doc.setFontSize(12);
+            doc.text(`Main Circuit - Max Power: ${data.main.max} kW, kWh: ${data.main.kwh}, PF: ${data.main.pf}`, 20, 40);
+            doc.text(`Master Circuit - Max Power: ${data.master.max} kW, kWh: ${data.master.kwh}, PF: ${data.master.pf}`, 20, 50);
+            doc.text(`Sub Circuit - Max Power: ${data.sub.max} kW, kWh: ${data.sub.kwh}, PF: ${data.sub.pf}`, 20, 60);
+            doc.text(`Solar kWh Generated: ${data.solar.kwh}`, 20, 70);
+            doc.text(`Total Billing: ${document.getElementById('billing-amount').innerText}`, 20, 80);
+
+            doc.save("Smart_IoT_Distribution_Report.pdf");
+        }
+
+        function getMaxNumber(arr) {
+            if (!Array.isArray(arr) || arr.length === 0) {
+                return null; // or throw error if needed
+            }
+            return Math.max(...arr);
+        }
+
+
+
+
+        setInterval(() => {
+    fetch("http://192.168.140.6:3000/Data/get", requestOptions)
+        .then((response) => response.json())
+        .then((result) => {
+            console.log(result);
+
+            data.main.max = getMaxNumber(result.Main_Circuit.power);
+            data.main.kwh = result.Main_Circuit.KWH;
+            data.main.pf = result.Main_Circuit.PF.at(-1);
+
+            data.master.max = getMaxNumber(result.Master_Circuit.power);
+            data.master.kwh = result.Master_Circuit.KWH;
+            data.master.pf = result.Master_Circuit.PF.at(-1);
+
+            data.sub.max = getMaxNumber(result.Sub_Circuit.power);
+            data.sub.kwh = result.Sub_Circuit.KWH;
+            data.sub.pf = result.Sub_Circuit.PF.at(-1);
+
+            data.solar.kwh = result.Solar_Circuit.KWH;
+
+            console.log("max power", data.main.max);
+
+            powerData = [10, 11, 12, data.main.max, 13, 14];
+            energyData = [300, 320, 340, data.main.kwh, 360, 380];
+            solarData = [50, 60, 80, data.solar.kwh, 90, 100];
+
+            // ✅ Update datasets
+            powerChart.data.datasets[0].data = powerData;
+            energyChart.data.datasets[0].data = energyData;
+            solarChart.data.datasets[0].data = solarData;
+
+            // ✅ Call updates AFTER data is set
+            updateDisplay();
+            applySolar();
+            calculateBilling();
+
+            // ✅ Update charts
+            powerChart.update();
+            energyChart.update();
+            solarChart.update();
+
+            // predictNext(pass); // If needed
+        })
+        .catch((error) => {
+            console.error("Fetch error:", error);
+        });
+}, 1500);
+
+
+    </script>
+</body>
+
+</html>
