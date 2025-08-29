@@ -176,7 +176,7 @@
 
   console.log("max-power", data);
 
-  fetch("http://192.168.140.6:3000/update_max_value", requestOptions_switch)
+  fetch("https://iot-board.onrender.com/update_max_value", requestOptions_switch)
     .then((response) => response.text())
     .then((result) => console.log("Server response:", result))
     .catch((error) => console.error("Fetch error:", error));
@@ -258,7 +258,7 @@
 
 
         setInterval(() => {
-    fetch("http://192.168.140.6:3000/Data/get", requestOptions)
+    fetch("https://iot-board.onrender.com/Data/get", requestOptions)
         .then((response) => response.json())
         .then((result) => {
             console.log(result);
