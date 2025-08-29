@@ -2,7 +2,7 @@ const express = require("express");
 const path = require("path");
 const bodyparser = require("body-parser")
 const Data = require("./routes/getData")
-const variable = require("../IoT Enable Smart Distribution Board/routes/variable")
+const variable = require("./routes/variable")
 
 
   
